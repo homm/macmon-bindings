@@ -3,12 +3,16 @@ requires = ["setuptools>=80", "cffi>=1.17,<2"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "macmon-python"
-version = "0.1.0"
-description = "Python cffi bindings for the macmon library"
+name = "macmon-lib"
+version = "0.7.0.post1"
+description = "Fast Python bindings for macmon with a bundled native library and no external runtime binaries"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = ["cffi>=1.17,<2"]
+
+[project.urls]
+Repository = "https://github.com/homm/macmon-bindings"
+Source = "https://github.com/homm/macmon-bindings/tree/main/python"
 
 [tool.setuptools]
 packages = ["macmon"]
