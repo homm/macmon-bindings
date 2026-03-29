@@ -1,0 +1,6 @@
+__pycache__
+/build
+/dist
+/wheelhouse
+/*.egg-info
+/macmon/_api.*.so

@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools>=80", "cffi>=1.17,<2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "macmon-python"
+version = "0.1.0"
+description = "Python cffi bindings for the macmon library"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = ["cffi>=1.17,<2"]
+
+[tool.setuptools]
+packages = ["macmon"]
