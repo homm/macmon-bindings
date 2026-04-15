@@ -31,7 +31,7 @@ let package = Package(
     .target(
       name: "MacmonSwift",
       dependencies: ["CMacmon"],
-      path: "Sources/MacmonSwift"
+      path: "swift/Sources/MacmonSwift"
     ),
   ]
 )
