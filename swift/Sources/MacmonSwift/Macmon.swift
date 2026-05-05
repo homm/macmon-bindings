@@ -206,7 +206,7 @@ public struct TemperatureMetrics: Sendable {
 public struct SocInfo: Sendable {
   public let macModel: String
   public let chipName: String
-  public let memoryGB: UInt8
+  public let memoryGB: UInt16
   public let cpuDomains: [CpuDomain]
   public let gpuCores: UInt8
   public let gpuFrequenciesMHz: [UInt32]
