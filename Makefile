@@ -1,5 +1,5 @@
-CMACMON_ZIP_URL := https://github.com/homm/macmon/releases/download/v0.7.2/CMacmon.xcframework-v0.7.2.zip
-CMACMON_ZIP_SHA256 := 1cdcbb9bde1c035b1a9b767e7182afa5bc12f0f2472e1938cb7533fa3a70ea4a
+CMACMON_ZIP_URL := https://github.com/homm/macmon/releases/download/v0.7.3/CMacmon.xcframework-v0.7.3.zip
+CMACMON_ZIP_SHA256 := 364745111d6d96ce05a47ac7a7b7a639ef8e20e81edce8519393e8944da4806c
 PYTHON_PLATFORM := macosx-11.0-arm64
 
 

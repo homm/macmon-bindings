@@ -13,8 +13,8 @@ if let localPath = ProcessInfo.processInfo.environment["MACMON_XCFRAMEWORK_PATH"
 } else {
   cMacmonTarget = .binaryTarget(
     name: "CMacmon",
-    url: "https://github.com/homm/macmon/releases/download/v0.7.2/CMacmon.xcframework-v0.7.2.zip",
-    checksum: "1cdcbb9bde1c035b1a9b767e7182afa5bc12f0f2472e1938cb7533fa3a70ea4a"
+    url: "https://github.com/homm/macmon/releases/download/v0.7.3/CMacmon.xcframework-v0.7.3.zip",
+    checksum: "364745111d6d96ce05a47ac7a7b7a639ef8e20e81edce8519393e8944da4806c"
   )
 }
 
