@@ -102,11 +102,11 @@ public final class Sampler {
 }
 
 public struct Metrics: Sendable {
-  public let cpu_usage: [CpuUsage]
-  public let gpu_usage: [GpuUsage]
-  public let power: PowerMetrics
-  public let memory: MemoryMetrics
-  public let temperature: TemperatureMetrics
+  public var cpu_usage: [CpuUsage]
+  public var gpu_usage: [GpuUsage]
+  public var power: PowerMetrics
+  public var memory: MemoryMetrics
+  public var temperature: TemperatureMetrics
 
   fileprivate init(_ raw: macmon_metrics_t) {
     cpu_usage = buffer(from: raw.cpu_usage.ptr, count: raw.cpu_usage.len).map(CpuUsage.init)
@@ -118,11 +118,11 @@ public struct Metrics: Sendable {
 }
 
 public struct CpuUsage: Sendable {
-  public let name: String
-  public let units: UInt32
-  public let frequencyMHz: UInt32
-  public let usage: Float
-  public let cores: [CoreUsage]
+  public var name: String
+  public var units: UInt32
+  public var frequencyMHz: UInt32
+  public var usage: Float
+  public var cores: [CoreUsage]
 
   fileprivate init(_ raw: macmon_cpu_usage_t) {
     let frequencies = buffer(from: raw.cores_freq_mhz, count: Int(raw.units))
@@ -137,15 +137,15 @@ public struct CpuUsage: Sendable {
 }
 
 public struct CoreUsage: Sendable {
-  public let frequencyMHz: UInt32
-  public let usage: Float
+  public var frequencyMHz: UInt32
+  public var usage: Float
 }
 
 public struct GpuUsage: Sendable {
-  public let name: String
-  public let units: UInt32
-  public let frequencyMHz: UInt32
-  public let usage: Float
+  public var name: String
+  public var units: UInt32
+  public var frequencyMHz: UInt32
+  public var usage: Float
 
   fileprivate init(_ raw: macmon_gpu_usage_t) {
     name = string(from: raw.name)
@@ -156,15 +156,15 @@ public struct GpuUsage: Sendable {
 }
 
 public struct PowerMetrics: Sendable {
-  public let package: Float
-  public let cpu: Float
-  public let gpu: Float
-  public let ram: Float
-  public let gpuRAM: Float
-  public let ane: Float
-  public let board: Float
-  public let battery: Float
-  public let dcIn: Float
+  public var package: Float
+  public var cpu: Float
+  public var gpu: Float
+  public var ram: Float
+  public var gpuRAM: Float
+  public var ane: Float
+  public var board: Float
+  public var battery: Float
+  public var dcIn: Float
 
   fileprivate init(_ raw: macmon_power_metrics_t) {
     package = raw.package
@@ -180,10 +180,10 @@ public struct PowerMetrics: Sendable {
 }
 
 public struct MemoryMetrics: Sendable {
-  public let ramTotal: UInt64
-  public let ramUsage: UInt64
-  public let swapTotal: UInt64
-  public let swapUsage: UInt64
+  public var ramTotal: UInt64
+  public var ramUsage: UInt64
+  public var swapTotal: UInt64
+  public var swapUsage: UInt64
 
   fileprivate init(_ raw: macmon_mem_metrics_t) {
     ramTotal = raw.ram_total
@@ -194,8 +194,8 @@ public struct MemoryMetrics: Sendable {
 }
 
 public struct TemperatureMetrics: Sendable {
-  public let cpuAverage: Float
-  public let gpuAverage: Float
+  public var cpuAverage: Float
+  public var gpuAverage: Float
 
   fileprivate init(_ raw: macmon_temp_metrics_t) {
     cpuAverage = raw.cpu_avg
@@ -204,12 +204,12 @@ public struct TemperatureMetrics: Sendable {
 }
 
 public struct SocInfo: Sendable {
-  public let macModel: String
-  public let chipName: String
-  public let memoryGB: UInt16
-  public let cpuDomains: [CpuDomain]
-  public let gpuCores: UInt8
-  public let gpuFrequenciesMHz: [UInt32]
+  public var macModel: String
+  public var chipName: String
+  public var memoryGB: UInt16
+  public var cpuDomains: [CpuDomain]
+  public var gpuCores: UInt8
+  public var gpuFrequenciesMHz: [UInt32]
 
   fileprivate init(_ raw: macmon_soc_info_t) {
     macModel = string(from: raw.mac_model)
@@ -222,9 +222,9 @@ public struct SocInfo: Sendable {
 }
 
 public struct CpuDomain: Sendable {
-  public let name: String
-  public let units: UInt32
-  public let frequenciesMHz: [UInt32]
+  public var name: String
+  public var units: UInt32
+  public var frequenciesMHz: [UInt32]
 
   fileprivate init(_ raw: macmon_cpu_domain_t) {
     name = string(from: raw.name)
