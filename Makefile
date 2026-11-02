@@ -17,7 +17,8 @@ cmacmon: CMacmon.xcframework
 
 
 .PHONY: python_wheel
-python_wheel: cmacmon
+python_wheel:
+	$(MAKE) -B cmacmon
 	pip install "build>=1.4" "delocate>=0.13"
 	rm -rf python/dist
 	cd python && _PYTHON_HOST_PLATFORM=$(PYTHON_PLATFORM) python -m build --wheel
