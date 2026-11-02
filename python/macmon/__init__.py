@@ -59,48 +59,33 @@ def _uint32_list(ptr, length: int) -> list[int]:
     return [int(ptr[index]) for index in range(length)] if ptr != _ffi.NULL else []
 
 
-def _float_list(ptr, length: int) -> list[float]:
-    return [float(ptr[index]) for index in range(length)] if ptr != _ffi.NULL else []
+@dataclass(frozen=True)
+class CpuCoreMetrics:
+    die_id: int
+    core_id: int
+    freq_mhz: int
+    scaled_ratio: float
+    active_ratio: float
 
 
 @dataclass(frozen=True)
-class CoreUsage:
-    frequency_mhz: int
-    usage: float
+class CpuTierMetrics:
+    label: str
+    freq_mhz: int
+    scaled_ratio: float
+    active_ratio: float
+    cores: list[CpuCoreMetrics]
 
 
 @dataclass(frozen=True)
-class CpuUsage:
+class FanMetric:
     name: str
-    units: int
-    frequency_mhz: int
-    usage: float
-    cores: list[CoreUsage]
+    rpm: int
+    max_rpm: int
 
 
 @dataclass(frozen=True)
-class GpuUsage:
-    name: str
-    units: int
-    frequency_mhz: int
-    usage: float
-
-
-@dataclass(frozen=True)
-class PowerMetrics:
-    package: float
-    cpu: float
-    gpu: float
-    ram: float
-    gpu_ram: float
-    ane: float
-    board: float
-    battery: float
-    dc_in: float
-
-
-@dataclass(frozen=True)
-class MemoryMetrics:
+class MemMetrics:
     ram_total: int
     ram_usage: int
     swap_total: int
@@ -108,25 +93,40 @@ class MemoryMetrics:
 
 
 @dataclass(frozen=True)
-class TemperatureMetrics:
-    cpu_average: float
-    gpu_average: float
+class TempMetrics:
+    cpu_temp_avg: float
+    gpu_temp_avg: float
 
 
 @dataclass(frozen=True)
 class Metrics:
-    cpu_usage: list[CpuUsage]
-    gpu_usage: list[GpuUsage]
-    power: PowerMetrics
-    memory: MemoryMetrics
-    temperature: TemperatureMetrics
+    temp: TempMetrics
+    memory: MemMetrics
+    fans: list[FanMetric]
+    cpu_scaled_ratio: float
+    cpu_active_ratio: float
+    cpu_tiers: list[CpuTierMetrics]
+    gpu_freq_mhz: int
+    gpu_scaled_ratio: float
+    gpu_active_ratio: float
+    cpu_power: float
+    gpu_power: float
+    ane_power: float
+    chip_power: float
+    sys_power: float
+    ram_power: float
+    gpu_ram_power: float
+    media_power: float
+    display_power: float
+    battery_power: float
+    dc_in_power: float
 
 
 @dataclass(frozen=True)
-class CpuDomain:
-    name: str
-    units: int
-    frequencies_mhz: list[int]
+class CpuTierInfo:
+    label: str
+    cores: int
+    freqs: list[int]
 
 
 @dataclass(frozen=True)
@@ -134,51 +134,33 @@ class SocInfo:
     mac_model: str
     chip_name: str
     memory_gb: int
-    cpu_domains: list[CpuDomain]
+    cpu_tiers: list[CpuTierInfo]
     gpu_cores: int
-    gpu_frequencies_mhz: list[int]
+    gpu_freqs: list[int]
+    vm: bool
 
 
-def _cpu_usage_from_raw(raw) -> CpuUsage:
-    frequencies = _uint32_list(raw.cores_freq_mhz, int(raw.units))
-    usages = _float_list(raw.cores_usage, int(raw.units))
-    return CpuUsage(
-        name=_decode_string(raw.name),
-        units=int(raw.units),
-        frequency_mhz=int(raw.freq_mhz),
-        usage=float(raw.usage),
+def _cpu_tier_from_raw(raw) -> CpuTierMetrics:
+    return CpuTierMetrics(
+        label=_decode_string(raw.label),
+        freq_mhz=int(raw.freq_mhz),
+        scaled_ratio=float(raw.scaled_ratio),
+        active_ratio=float(raw.active_ratio),
         cores=[
-            CoreUsage(frequency_mhz=frequency, usage=usage)
-            for frequency, usage in zip(frequencies, usages)
+            CpuCoreMetrics(
+                die_id=int(core.die_id),
+                core_id=int(core.core_id),
+                freq_mhz=int(core.freq_mhz),
+                scaled_ratio=float(core.scaled_ratio),
+                active_ratio=float(core.active_ratio),
+            )
+            for core in (raw.cores[index] for index in range(int(raw.cores_len)))
         ],
     )
 
 
-def _gpu_usage_from_raw(raw) -> GpuUsage:
-    return GpuUsage(
-        name=_decode_string(raw.name),
-        units=int(raw.units),
-        frequency_mhz=int(raw.freq_mhz),
-        usage=float(raw.usage),
-    )
-
-
-def _power_metrics_from_raw(raw) -> PowerMetrics:
-    return PowerMetrics(
-        package=float(raw.package),
-        cpu=float(raw.cpu),
-        gpu=float(raw.gpu),
-        ram=float(raw.ram),
-        gpu_ram=float(raw.gpu_ram),
-        ane=float(raw.ane),
-        board=float(raw.board),
-        battery=float(raw.battery),
-        dc_in=float(raw.dc_in),
-    )
-
-
-def _memory_metrics_from_raw(raw) -> MemoryMetrics:
-    return MemoryMetrics(
+def _memory_metrics_from_raw(raw) -> MemMetrics:
+    return MemMetrics(
         ram_total=int(raw.ram_total),
         ram_usage=int(raw.ram_usage),
         swap_total=int(raw.swap_total),
@@ -186,34 +168,50 @@ def _memory_metrics_from_raw(raw) -> MemoryMetrics:
     )
 
 
-def _temperature_metrics_from_raw(raw) -> TemperatureMetrics:
-    return TemperatureMetrics(
-        cpu_average=float(raw.cpu_avg),
-        gpu_average=float(raw.gpu_avg),
+def _temperature_metrics_from_raw(raw) -> TempMetrics:
+    return TempMetrics(
+        cpu_temp_avg=float(raw.cpu_temp_avg),
+        gpu_temp_avg=float(raw.gpu_temp_avg),
     )
 
 
 def _metrics_from_raw(raw) -> Metrics:
     return Metrics(
-        cpu_usage=[
-            _cpu_usage_from_raw(raw.cpu_usage.ptr[index])
-            for index in range(int(raw.cpu_usage.len))
-        ],
-        gpu_usage=[
-            _gpu_usage_from_raw(raw.gpu_usage.ptr[index])
-            for index in range(int(raw.gpu_usage.len))
-        ],
-        power=_power_metrics_from_raw(raw.power),
+        temp=_temperature_metrics_from_raw(raw.temp),
         memory=_memory_metrics_from_raw(raw.memory),
-        temperature=_temperature_metrics_from_raw(raw.temp),
+        fans=[
+            FanMetric(
+                name=_decode_string(fan.name),
+                rpm=int(fan.rpm),
+                max_rpm=int(fan.max_rpm),
+            )
+            for fan in (raw.fans[index] for index in range(int(raw.fans_len)))
+        ],
+        cpu_scaled_ratio=float(raw.cpu_scaled_ratio),
+        cpu_active_ratio=float(raw.cpu_active_ratio),
+        cpu_tiers=[_cpu_tier_from_raw(raw.cpu_tiers[index]) for index in range(int(raw.cpu_tiers_len))],
+        gpu_freq_mhz=int(raw.gpu_freq_mhz),
+        gpu_scaled_ratio=float(raw.gpu_scaled_ratio),
+        gpu_active_ratio=float(raw.gpu_active_ratio),
+        cpu_power=float(raw.cpu_power),
+        gpu_power=float(raw.gpu_power),
+        ane_power=float(raw.ane_power),
+        chip_power=float(raw.chip_power),
+        sys_power=float(raw.sys_power),
+        ram_power=float(raw.ram_power),
+        gpu_ram_power=float(raw.gpu_ram_power),
+        media_power=float(raw.media_power),
+        display_power=float(raw.display_power),
+        battery_power=float(raw.battery_power),
+        dc_in_power=float(raw.dc_in_power),
     )
 
 
-def _cpu_domain_from_raw(raw) -> CpuDomain:
-    return CpuDomain(
-        name=_decode_string(raw.name),
-        units=int(raw.units),
-        frequencies_mhz=_uint32_list(raw.freqs_mhz, int(raw.freqs_len)),
+def _cpu_tier_info_from_raw(raw) -> CpuTierInfo:
+    return CpuTierInfo(
+        label=_decode_string(raw.label),
+        cores=int(raw.cores),
+        freqs=_uint32_list(raw.freqs, int(raw.freqs_len)),
     )
 
 
@@ -222,12 +220,13 @@ def _soc_info_from_raw(raw) -> SocInfo:
         mac_model=_decode_string(raw.mac_model),
         chip_name=_decode_string(raw.chip_name),
         memory_gb=int(raw.memory_gb),
-        cpu_domains=[
-            _cpu_domain_from_raw(raw.cpu_domains[index])
-            for index in range(int(raw.cpu_domains_len))
+        cpu_tiers=[
+            _cpu_tier_info_from_raw(raw.cpu_tiers[index])
+            for index in range(int(raw.cpu_tiers_len))
         ],
         gpu_cores=int(raw.gpu_cores),
-        gpu_frequencies_mhz=_uint32_list(raw.gpu_freqs_mhz, int(raw.gpu_freqs_len)),
+        gpu_freqs=_uint32_list(raw.gpu_freqs, int(raw.gpu_freqs_len)),
+        vm=bool(raw.vm),
     )
 
 
@@ -282,20 +281,19 @@ def soc_info() -> SocInfo:
 
 
 __all__ = [
-    "CoreUsage",
-    "CpuDomain",
-    "CpuUsage",
-    "GpuUsage",
+    "CpuCoreMetrics",
+    "CpuTierInfo",
+    "CpuTierMetrics",
+    "FanMetric",
     "InitializationFailedError",
     "InvalidArgumentError",
     "MacmonError",
-    "MemoryMetrics",
+    "MemMetrics",
     "Metrics",
     "PanicError",
-    "PowerMetrics",
     "Sampler",
     "SamplingFailedError",
     "SocInfo",
-    "TemperatureMetrics",
+    "TempMetrics",
     "soc_info",
 ]

@@ -1,56 +1,37 @@
 # MacmonSwift
 
-Swift wrapper for the Rust `macmon` library.
-
-## Layout
-
-- `../../dist/CMacmon.xcframework`: packaged `libmacmon.dylib` plus public headers produced by the core repository build
-- `MacmonSwift`: safe Swift wrapper that copies FFI values into Swift structs
+Swift wrapper for the [macmon](https://github.com/vladkens/macmon) C API that copies FFI data into Swift structs.
 
 ## Build
 
-Build the core xcframework first:
+Run Swift Package Manager commands from the repository root, where `Package.swift` is located.
+
+By default, Swift Package Manager downloads the prebuilt `CMacmon.xcframework` from the URL configured in `Package.swift`.
+
+For local builds, assuming the app, `macmon-bindings`, and `macmon` are in sibling directories, provide `MACMON_XCFRAMEWORK_PATH` with a path:
 
 ```sh
-make xcframework
+make -C ../macmon xcframework
+MACMON_XCFRAMEWORK_PATH=../macmon/dist/CMacmon.xcframework swift build
 ```
 
-Then build the Swift package:
+For local Xcode development, create `MyApp.local.xcworkspace/contents.xcworkspacedata` with the app project and the local package, which overrides the remote package dependency:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<Workspace version="1.0">
+   <FileRef location="group:MyApp.xcodeproj"></FileRef>
+   <FileRef location="group:../macmon-bindings"></FileRef>
+</Workspace>
+```
+
+Use the Xcode workspace together with `MACMON_XCFRAMEWORK_PATH` when running `xcodebuild`:
 
 ```sh
-cd bindings/swift
-swift build
+make -C ../macmon xcframework
+MACMON_XCFRAMEWORK_PATH=../macmon/dist/CMacmon.xcframework \
+    xcodebuild -workspace MyApp.local.xcworkspace -scheme MyApp build
 ```
-
-The packaged artifact is written to `dist/CMacmon.xcframework` in the repository root.
-
-## Release archive
-
-If a GitHub release includes `CMacmon.xcframework-<version>.zip`, you can use that artifact instead of
-building Rust locally. Unpack the archive so that `dist/CMacmon.xcframework` exists in the repository root, then
-build the Swift package as usual:
-
-```sh
-unzip /path/to/CMacmon.xcframework-<version>.zip -d .
-cd bindings/swift
-swift build
-```
-
-This package uses `binaryTarget(path:)`, so the xcframework must exist on disk. By default it looks in
-`../../dist/CMacmon.xcframework`.
-
-## Xcode
-
-`bindings/swift` can be added to Xcode as a local Swift package. The package depends on the prebuilt
-`../../dist/CMacmon.xcframework`, so build that artifact before opening or building an app target:
-
-```sh
-make xcframework
-open ../MenuStats/StillCore.xcodeproj
-```
-
-Unlike the previous `libmacmon.dylib` workflow, the app target does not need a custom copy/sign script.
-Xcode embeds the dynamic library from the xcframework through the package dependency.
 
 ## Example
 
@@ -62,5 +43,6 @@ let info = try Macmon.socInfo()
 let metrics = try sampler.metrics()
 
 print(info.chipName)
-print(metrics.power.package)
+print(metrics.chipPower)
+print(metrics.mediaPower)
 ```

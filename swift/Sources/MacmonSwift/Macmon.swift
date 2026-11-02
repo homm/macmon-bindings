@@ -102,84 +102,96 @@ public final class Sampler {
 }
 
 public struct Metrics: Sendable {
-  public var cpu_usage: [CpuUsage]
-  public var gpu_usage: [GpuUsage]
-  public var power: PowerMetrics
-  public var memory: MemoryMetrics
-  public var temperature: TemperatureMetrics
+  public var temp: TempMetrics
+  public var memory: MemMetrics
+  public var fans: [FanMetric]
+  public var cpuScaledRatio: Float
+  public var cpuActiveRatio: Float
+  public var cpuTiers: [CpuTierMetrics]
+  public var gpuFreqMHz: UInt32
+  public var gpuScaledRatio: Float
+  public var gpuActiveRatio: Float
+  public var cpuPower: Float
+  public var gpuPower: Float
+  public var anePower: Float
+  public var chipPower: Float
+  public var sysPower: Float
+  public var ramPower: Float
+  public var gpuRamPower: Float
+  public var mediaPower: Float
+  public var displayPower: Float
+  public var batteryPower: Float
+  public var dcInPower: Float
 
   fileprivate init(_ raw: macmon_metrics_t) {
-    cpu_usage = buffer(from: raw.cpu_usage.ptr, count: raw.cpu_usage.len).map(CpuUsage.init)
-    gpu_usage = buffer(from: raw.gpu_usage.ptr, count: raw.gpu_usage.len).map(GpuUsage.init)
-    power = PowerMetrics(raw.power)
-    memory = MemoryMetrics(raw.memory)
-    temperature = TemperatureMetrics(raw.temp)
+    temp = TempMetrics(raw.temp)
+    memory = MemMetrics(raw.memory)
+    fans = buffer(from: raw.fans, count: raw.fans_len).map(FanMetric.init)
+    cpuScaledRatio = raw.cpu_scaled_ratio
+    cpuActiveRatio = raw.cpu_active_ratio
+    cpuTiers = buffer(from: raw.cpu_tiers, count: raw.cpu_tiers_len).map(CpuTierMetrics.init)
+    gpuFreqMHz = raw.gpu_freq_mhz
+    gpuScaledRatio = raw.gpu_scaled_ratio
+    gpuActiveRatio = raw.gpu_active_ratio
+    cpuPower = raw.cpu_power
+    gpuPower = raw.gpu_power
+    anePower = raw.ane_power
+    chipPower = raw.chip_power
+    sysPower = raw.sys_power
+    ramPower = raw.ram_power
+    gpuRamPower = raw.gpu_ram_power
+    mediaPower = raw.media_power
+    displayPower = raw.display_power
+    batteryPower = raw.battery_power
+    dcInPower = raw.dc_in_power
   }
 }
 
-public struct CpuUsage: Sendable {
+public struct CpuTierMetrics: Sendable {
+  public var label: String
+  public var freqMHz: UInt32
+  public var scaledRatio: Float
+  public var activeRatio: Float
+  public var cores: [CpuCoreMetrics]
+
+  fileprivate init(_ raw: macmon_cpu_tier_t) {
+    label = string(from: raw.label)
+    freqMHz = raw.freq_mhz
+    scaledRatio = raw.scaled_ratio
+    activeRatio = raw.active_ratio
+    cores = buffer(from: raw.cores, count: raw.cores_len).map(CpuCoreMetrics.init)
+  }
+}
+
+public struct CpuCoreMetrics: Sendable {
+  public var dieID: Int
+  public var coreID: Int
+  public var freqMHz: UInt32
+  public var scaledRatio: Float
+  public var activeRatio: Float
+
+  fileprivate init(_ raw: macmon_cpu_core_t) {
+    dieID = raw.die_id
+    coreID = raw.core_id
+    freqMHz = raw.freq_mhz
+    scaledRatio = raw.scaled_ratio
+    activeRatio = raw.active_ratio
+  }
+}
+
+public struct FanMetric: Sendable {
   public var name: String
-  public var units: UInt32
-  public var frequencyMHz: UInt32
-  public var usage: Float
-  public var cores: [CoreUsage]
+  public var rpm: UInt32
+  public var maxRpm: UInt32
 
-  fileprivate init(_ raw: macmon_cpu_usage_t) {
-    let frequencies = buffer(from: raw.cores_freq_mhz, count: Int(raw.units))
-    let usages = buffer(from: raw.cores_usage, count: Int(raw.units))
-
+  fileprivate init(_ raw: macmon_fan_t) {
     name = string(from: raw.name)
-    units = raw.units
-    frequencyMHz = raw.freq_mhz
-    usage = raw.usage
-    cores = zip(frequencies, usages).map { CoreUsage(frequencyMHz: $0.0, usage: $0.1) }
+    rpm = raw.rpm
+    maxRpm = raw.max_rpm
   }
 }
 
-public struct CoreUsage: Sendable {
-  public var frequencyMHz: UInt32
-  public var usage: Float
-}
-
-public struct GpuUsage: Sendable {
-  public var name: String
-  public var units: UInt32
-  public var frequencyMHz: UInt32
-  public var usage: Float
-
-  fileprivate init(_ raw: macmon_gpu_usage_t) {
-    name = string(from: raw.name)
-    units = raw.units
-    frequencyMHz = raw.freq_mhz
-    usage = raw.usage
-  }
-}
-
-public struct PowerMetrics: Sendable {
-  public var package: Float
-  public var cpu: Float
-  public var gpu: Float
-  public var ram: Float
-  public var gpuRAM: Float
-  public var ane: Float
-  public var board: Float
-  public var battery: Float
-  public var dcIn: Float
-
-  fileprivate init(_ raw: macmon_power_metrics_t) {
-    package = raw.package
-    cpu = raw.cpu
-    gpu = raw.gpu
-    ram = raw.ram
-    gpuRAM = raw.gpu_ram
-    ane = raw.ane
-    board = raw.board
-    battery = raw.battery
-    dcIn = raw.dc_in
-  }
-}
-
-public struct MemoryMetrics: Sendable {
+public struct MemMetrics: Sendable {
   public var ramTotal: UInt64
   public var ramUsage: UInt64
   public var swapTotal: UInt64
@@ -193,13 +205,13 @@ public struct MemoryMetrics: Sendable {
   }
 }
 
-public struct TemperatureMetrics: Sendable {
-  public var cpuAverage: Float
-  public var gpuAverage: Float
+public struct TempMetrics: Sendable {
+  public var cpuTempAvg: Float
+  public var gpuTempAvg: Float
 
   fileprivate init(_ raw: macmon_temp_metrics_t) {
-    cpuAverage = raw.cpu_avg
-    gpuAverage = raw.gpu_avg
+    cpuTempAvg = raw.cpu_temp_avg
+    gpuTempAvg = raw.gpu_temp_avg
   }
 }
 
@@ -207,29 +219,31 @@ public struct SocInfo: Sendable {
   public var macModel: String
   public var chipName: String
   public var memoryGB: UInt16
-  public var cpuDomains: [CpuDomain]
+  public var cpuTiers: [CpuTierInfo]
   public var gpuCores: UInt8
-  public var gpuFrequenciesMHz: [UInt32]
+  public var gpuFreqs: [UInt32]
+  public var vm: Bool
 
   fileprivate init(_ raw: macmon_soc_info_t) {
     macModel = string(from: raw.mac_model)
     chipName = string(from: raw.chip_name)
     memoryGB = raw.memory_gb
-    cpuDomains = buffer(from: raw.cpu_domains, count: raw.cpu_domains_len).map(CpuDomain.init)
+    cpuTiers = buffer(from: raw.cpu_tiers, count: raw.cpu_tiers_len).map(CpuTierInfo.init)
     gpuCores = raw.gpu_cores
-    gpuFrequenciesMHz = buffer(from: raw.gpu_freqs_mhz, count: raw.gpu_freqs_len)
+    gpuFreqs = buffer(from: raw.gpu_freqs, count: raw.gpu_freqs_len)
+    vm = raw.vm
   }
 }
 
-public struct CpuDomain: Sendable {
-  public var name: String
-  public var units: UInt32
-  public var frequenciesMHz: [UInt32]
+public struct CpuTierInfo: Sendable {
+  public var label: String
+  public var cores: UInt8
+  public var freqs: [UInt32]
 
-  fileprivate init(_ raw: macmon_cpu_domain_t) {
-    name = string(from: raw.name)
-    units = raw.units
-    frequenciesMHz = buffer(from: raw.freqs_mhz, count: raw.freqs_len)
+  fileprivate init(_ raw: macmon_cpu_tier_info_t) {
+    label = string(from: raw.label)
+    cores = raw.cores
+    freqs = buffer(from: raw.freqs, count: raw.freqs_len)
   }
 }
 

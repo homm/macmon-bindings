@@ -26,10 +26,10 @@ def _print_chip_info() -> None:
     print(f"  Model: {info.mac_model}")
     print(f"  Chip: {info.chip_name}")
     print(f"  Memory: {info.memory_gb} GB")
-    for domain in info.cpu_domains:
-        freqs = ", ".join(f"{freq} MHz" for freq in domain.frequencies_mhz)
-        print(f"  CPU domain {domain.name}: {domain.units} cores [{freqs}]")
-    gpu_freqs = ", ".join(f"{freq} MHz" for freq in info.gpu_frequencies_mhz)
+    for tier in info.cpu_tiers:
+        freqs = ", ".join(f"{freq} MHz" for freq in tier.freqs)
+        print(f"  CPU tier {tier.label}: {tier.cores} cores [{freqs}]")
+    gpu_freqs = ", ".join(f"{freq} MHz" for freq in info.gpu_freqs)
     print(f"  GPU cores: {info.gpu_cores}")
     print(f"  GPU frequencies: [{gpu_freqs}]")
 
@@ -39,19 +39,23 @@ def _print_metrics(sampler: Sampler) -> None:
     timestamp = datetime.now().strftime("%H:%M:%S")
     print()
     print(f"[{timestamp}] Metrics")
-    for cpu in metrics.cpu_usage:
+    for cpu in metrics.cpu_tiers:
         print(
-            f"  {cpu.name}: {cpu.frequency_mhz} MHz, {cpu.usage * 100:.1f}%"
+            f"  {cpu.label}: {cpu.freq_mhz} MHz,"
+            f" scaled={cpu.scaled_ratio * 100:.1f}%, active={cpu.active_ratio * 100:.1f}%"
         )
-    for gpu in metrics.gpu_usage:
-        print(f"  {gpu.name}: {gpu.frequency_mhz} MHz, {gpu.usage * 100:.1f}%")
+    print(
+        f"  GPU: {metrics.gpu_freq_mhz} MHz,"
+        f" scaled={metrics.gpu_scaled_ratio * 100:.1f}%, active={metrics.gpu_active_ratio * 100:.1f}%"
+    )
     print(
         "  Power:"
-        f" board={metrics.power.board:.2f}W"
-        f" package={metrics.power.package:.2f}W"
-        f" cpu={metrics.power.cpu:.2f}W"
-        f" gpu={metrics.power.gpu:.2f}W"
-        f" ram={metrics.power.ram:.2f}W"
+        f" system={metrics.sys_power:.2f}W"
+        f" chip={metrics.chip_power:.2f}W"
+        f" cpu={metrics.cpu_power:.2f}W"
+        f" gpu={metrics.gpu_power:.2f}W"
+        f" ram={metrics.ram_power:.2f}W"
+        f" media={metrics.media_power:.2f}W"
     )
     print(
         "  Memory:"
@@ -62,8 +66,8 @@ def _print_metrics(sampler: Sampler) -> None:
     )
     print(
         "  Temperature:"
-        f" cpu={metrics.temperature.cpu_average:.1f}C"
-        f" gpu={metrics.temperature.gpu_average:.1f}C"
+        f" cpu={metrics.temp.cpu_temp_avg}C"
+        f" gpu={metrics.temp.gpu_temp_avg}C"
     )
 
 
@@ -79,8 +83,8 @@ def main() -> int:
 
         with Sampler() as sampler:
             while _running:
-                _print_metrics(sampler)
                 time.sleep(1.0)
+                _print_metrics(sampler)
     except MacmonError as exc:
         print(f"macmon error: {exc}", file=sys.stderr)
         return 1

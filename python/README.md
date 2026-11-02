@@ -21,11 +21,12 @@ async def main() -> None:
         while True:
             metrics = sampler.metrics()
             print(
-                "board_w=%.2f cpu_usage=%.3f gpu_usage=%.3f"
+                "chip_w=%.2f media_w=%.2f cpu_usage=%.3f gpu_usage=%.3f"
                 % (
-                    metrics.power.board,
-                    metrics.cpu_usage[0].usage if metrics.cpu_usage else 0.0,
-                    metrics.gpu_usage[0].usage if metrics.gpu_usage else 0.0,
+                    metrics.chip_power,
+                    metrics.media_power,
+                    metrics.cpu_scaled_ratio,
+                    metrics.gpu_scaled_ratio,
                 )
             )
             await asyncio.sleep(1.0)
