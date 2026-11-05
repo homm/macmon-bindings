@@ -1,5 +1,5 @@
-CMACMON_ZIP_URL := https://github.com/homm/macmon/releases/download/capi-v0.10.0/CMacmon.xcframework-v0.10.0.zip
-CMACMON_ZIP_SHA256 := 5e36809d9c91ef32d600ece13682ac87a4ca3e95f409b2b030295f1df624438a
+CMACMON_ZIP_URL := https://github.com/homm/macmon/releases/download/capi-v0.10.0.1/CMacmon.xcframework-v0.10.0.1.zip
+CMACMON_ZIP_SHA256 := 8f55541930c8b0eac54c25324997b28c179e6ce8db318473ed1c503a7b626b10
 PYTHON_PLATFORM := macosx-11.0-arm64
 
 
